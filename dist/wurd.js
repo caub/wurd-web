@@ -83,6 +83,7 @@
       _classCallCheck(this, Store);
 
       this.rawContent = rawContent;
+      this.cb = null;
     }
     /**
      * Get a specific piece of content, top-level or nested
@@ -96,6 +97,7 @@
       key: "get",
       value: function get(path) {
         if (!path) return this.rawContent;
+        if (this.cb) this.cb(path);
         return path.split('.').reduce(function (acc, k) {
           return acc && acc[k];
         }, this.rawContent);
@@ -430,6 +432,10 @@
 
         if (options.blockHelpers) {
           this.setBlockHelpers(options.blockHelpers);
+        }
+
+        if (options.getCallback) {
+          this.store.cb = options.getCallback;
         }
 
         return this;

@@ -75,6 +75,10 @@ class Wurd {
       this.setBlockHelpers(options.blockHelpers);
     }
 
+    if (options.getCallback) {
+      this.store.cb = options.getCallback;
+    }
+
     return this;
   }
 

@@ -5,6 +5,7 @@ export default class Store {
    */
   constructor(rawContent = {}) {
     this.rawContent = rawContent;
+    this.cb = null;
   }
 
   /**
@@ -15,6 +16,8 @@ export default class Store {
    */
   get(path) {
     if (!path) return this.rawContent;
+
+    if (this.cb) this.cb(path);
 
     return path.split('.').reduce((acc, k) => acc && acc[k], this.rawContent);
   }

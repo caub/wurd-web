@@ -34,6 +34,7 @@ class Store {
    */
   constructor(rawContent = {}) {
     this.rawContent = rawContent;
+    this.cb = null;
   }
 
   /**
@@ -44,6 +45,8 @@ class Store {
    */
   get(path) {
     if (!path) return this.rawContent;
+
+    if (this.cb) this.cb(path);
 
     return path.split('.').reduce((acc, k) => acc && acc[k], this.rawContent);
   }
@@ -355,6 +358,10 @@ class Wurd {
 
     if (options.blockHelpers) {
       this.setBlockHelpers(options.blockHelpers);
+    }
+
+    if (options.getCallback) {
+      this.store.cb = options.getCallback;
     }
 
     return this;
