@@ -144,14 +144,14 @@
           var cachedContent = JSON.parse(localStorage.getItem(storageKey));
           var metaData = cachedContent && cachedContent._wurd;
 
-          // Check if it has expired
-          if (!cachedContent || !metaData || metaData.savedAt + ttl < Date.now()) {
+          // Check it's in the correct language
+          if (!cachedContent || !metaData || metaData.lang !== lang) {
             return rawContent;
           }
 
-          // Check it's in the correct language
-          if (metaData.lang !== lang) {
-            return rawContent;
+          // Check if it has expired
+          if (metaData.savedAt + ttl < Date.now()) {
+            rawContent._expired = true;
           }
 
           // Remove metadata
@@ -206,11 +206,6 @@
       this.wurd = wurd;
       this.path = path;
 
-      // Private shortcut to the main content getter
-      // TODO: Make a proper private variable
-      // See http://voidcanvas.com/es6-private-variables/ - but could require Babel Polyfill to be included
-      this._get = wurd.store.get.bind(wurd.store);
-
       // Bind methods to the instance to enable 'this' to be available
       // to own methods and added helper methods;
       // This also allows object destructuring, for example:
@@ -246,12 +241,12 @@
     }, {
       key: "get",
       value: function get(path) {
-        var result = this._get(this.id(path));
+        var result = this.wurd.store.get(this.id(path));
 
         // If an item is missing, check that the section has been loaded
         if (typeof result === 'undefined' && this.wurd.draft) {
           var section = path.split('.')[0];
-          if (!this._get(section)) {
+          if (!this.wurd.store.get(section)) {
             console.warn("Tried to access unloaded section: ".concat(section));
           }
         }
@@ -526,31 +521,29 @@
         var cachedContent = store.load(sections, {
           lang: lang
         });
-        var uncachedSections = sections.filter(function (section) {
+        var uncachedSections = cachedContent._expired ? sections : sections.filter(function (section) {
           return cachedContent[section] === undefined;
         });
         if (debug) console.info('Wurd: from cache:', sections.filter(function (section) {
           return cachedContent[section] !== undefined;
         }));
 
-        // Return now if all content was in cache
-        if (uncachedSections.length === 0) {
-          // Pass main content Block to callbacks
-          if (onLoad) onLoad(content);
-          return Promise.resolve(content);
+        // If missing sections, refetch in background
+        if (uncachedSections.length) {
+          this._fetchSections(uncachedSections).then(function (result) {
+            // Cache for next time
+            store.save(result, {
+              lang: lang
+            });
+
+            // Pass main content Block to callbacks
+            if (onLoad) onLoad(store.get());
+          });
         }
 
-        // Otherwise fetch remaining sections
-        return this._fetchSections(uncachedSections).then(function (result) {
-          // Cache for next time
-          store.save(result, {
-            lang: lang
-          });
-
-          // Pass main content Block to callbacks
-          if (onLoad) onLoad(content);
-          return content;
-        });
+        // Return content in all case
+        if (onLoad) onLoad(content);
+        return content;
       }
     }, {
       key: "_fetchSections",

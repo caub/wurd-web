@@ -128,13 +128,13 @@ class Wurd {
     // If missing sections, refetch in background
     if (uncachedSections.length) {
       this._fetchSections(uncachedSections)
-      .then(result => {
-        // Cache for next time
-        store.save(result, { lang });
+        .then(result => {
+          // Cache for next time
+          store.save(result, { lang });
 
-        // Pass main content Block to callbacks
-        if (onLoad) onLoad(store.get());
-      });
+          // Pass main content Block to callbacks
+          if (onLoad) onLoad(store.get());
+        });
     }
 
     // Return content in all case
