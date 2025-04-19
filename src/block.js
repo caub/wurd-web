@@ -7,11 +7,6 @@ export default class Block {
     this.wurd = wurd;
     this.path = path;
 
-    // Private shortcut to the main content getter
-    // TODO: Make a proper private variable
-    // See http://voidcanvas.com/es6-private-variables/ - but could require Babel Polyfill to be included
-    this._get = wurd.store.get.bind(wurd.store);
-
     // Bind methods to the instance to enable 'this' to be available
     // to own methods and added helper methods;
     // This also allows object destructuring, for example:
@@ -45,13 +40,13 @@ export default class Block {
    * @return {Mixed}
    */
   get(path) {
-    const result = this._get(this.id(path));
+    const result = this.wurd.store.get(this.id(path));
 
     // If an item is missing, check that the section has been loaded
     if (typeof result === 'undefined' && this.wurd.draft) {
       const section = path.split('.')[0];
 
-      if (!this._get(section)) {
+      if (!this.wurd.store.get(section)) {
         console.warn(`Tried to access unloaded section: ${section}`);
       }
     }
