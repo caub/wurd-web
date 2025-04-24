@@ -135,7 +135,6 @@ describe('store', function() {
       test.deepEqual(store.load(), {
         a: { a: 'AA' },
         b: { a: 'BA' },
-        _expired: true,
       });
     });
 
