@@ -153,6 +153,26 @@ describe('Wurd', function() {
         }).catch(done);
     });
 
+    it('returns cached content if loading fails', function (done) {
+      client._fetch.rejects(new Error('timeout'));
+      Promise.resolve()
+        .then(() => client.load(['lorem','ipsum','dolor','amet']))
+        .then(content => {
+          same(client._fetchSections.callCount, 1);
+          
+          test.deepEqual(content.get(), {
+            lorem: { title: 'Lorem' },
+            dolor: { title: 'Dolor' },
+          });
+
+          // Should pass the main content Block to the onLoad() callback
+          same(client.onLoad.callCount, 1);
+          same(client.onLoad.args[0][0], content);
+
+          done();
+        }).catch(done);
+    });
+
     it('works with an array of sectionNames', function (done) {
       Promise.resolve()
         .then(() => client.load(['lorem', 'ipsum']))
