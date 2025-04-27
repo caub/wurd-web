@@ -115,23 +115,14 @@ describe('Wurd', function() {
           // Should return the main content Block
           test.deepEqual(content.get(), {
             lorem: { title: 'Lorem' },
+            ipsum: { title: 'Ipsum' },
             dolor: { title: 'Dolor' },
+            amet: { title: 'Amet' }
           });
 
           // Should pass the main content Block to the onLoad() callback
           same(client.onLoad.callCount, 1);
           same(client.onLoad.args[0][0], content);
-
-          // wait another cycle
-          await new Promise(r => setTimeout(r, 2));
-
-          same(client.onLoad.callCount, 2);
-          test.deepStrictEqual(client.onLoad.args[1][0], {
-            lorem: { title: 'Lorem' },
-            dolor: { title: 'Dolor' },
-            ipsum: { title: 'Ipsum' },
-            amet: { title: 'Amet' }
-          });
 
           done();
         }).catch(done);
@@ -167,7 +158,7 @@ describe('Wurd', function() {
         .then(() => client.load(['lorem', 'ipsum']))
         .then(content => {
           test.deepEqual(content.get('lorem.title'), 'Lorem');
-          test.deepEqual(content.get('ipsum.title'), undefined);
+          test.deepEqual(content.get('ipsum.title'), 'Ipsum');
 
           test.deepEqual(console.info.args, [
             ['Wurd: from cache:', ['lorem']],
@@ -183,7 +174,7 @@ describe('Wurd', function() {
         .then(() => client.load('dolor,amet'))
         .then(content => {
           test.deepEqual(content.get('dolor.title'), 'Dolor');
-          test.deepEqual(content.get('amet.title'), undefined);
+          test.deepEqual(content.get('amet.title'), 'Amet');
 
           test.deepEqual(console.info.args, [
             ['Wurd: from cache:', ['dolor']],
