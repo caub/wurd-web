@@ -71,17 +71,14 @@ class Store {
       const cachedContent = JSON.parse(localStorage.getItem(storageKey));
       const metaData = cachedContent && cachedContent._wurd;
 
-      // Check it's in the correct language
-      if (!cachedContent || !metaData || metaData.lang !== lang) {
+      // Check if it has expired
+      if (!cachedContent || !metaData || (metaData.savedAt + ttl) < Date.now()) {
         return rawContent;
       }
 
-      // Check if it has expired
-      if ((metaData.savedAt + ttl) < Date.now()) {
-        Object.defineProperty(cachedContent, '_expired', {
-          enumerable: false,
-          value: true,
-        });
+      // Check it's in the correct language
+      if (metaData.lang !== lang) {
+        return rawContent;
       }
 
       // Remove metadata
@@ -451,28 +448,37 @@ class Wurd {
     // Check for cached sections
     const cachedContent = store.load(sections, { lang });
 
-    const uncachedSections = cachedContent._expired
-      ? sections
-      : sections.filter(section => cachedContent[section] === undefined);
+    const uncachedSections = sections.filter(section => cachedContent[section] === undefined);
 
     if (debug) console.info('Wurd: from cache:', sections.filter(section => cachedContent[section] !== undefined));
 
+    // Return now if all content was in cache
+    if (uncachedSections.length === 0) {
+      // Pass main content Block to callbacks
+      if (onLoad) onLoad(content);
 
-    // If missing sections, refetch in background
-    if (uncachedSections.length) {
-      this._fetchSections(uncachedSections)
-        .then(result => {
-          // Cache for next time
-          store.save(result, { lang });
-
-          // Pass main content Block to callbacks
-          if (onLoad) onLoad(store.get());
-        });
+      return Promise.resolve(content);
     }
 
-    // Return content in all case
-    if (onLoad) onLoad(content);
-    return content;
+    // Otherwise fetch remaining sections
+    return this._fetchSections(uncachedSections)
+      .then(result => {
+        // Cache for next time
+        store.save(result, { lang });
+
+        // Pass main content Block to callbacks
+        if (onLoad) onLoad(content);
+
+        return content;
+      })
+      .catch(err => {
+        if (debug) console.info('Wurd: load error:', err);
+
+        // If content fails to load (wurd app offline), still return cache
+        if (onLoad) onLoad(content);
+
+        return content;
+      });
   }
 
   _fetchSections(sectionNames) {
